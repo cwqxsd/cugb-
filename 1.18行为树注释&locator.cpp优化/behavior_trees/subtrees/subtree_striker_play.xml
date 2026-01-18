@@ -1,0 +1,45 @@
+<root BTCPP_format="4" >
+   <include path="./subtree_cam_find_and_track_ball.xml" />
+   <include path="./subtree_find_ball.xml" />
+   <include path="./subtree_locate.xml" />
+   <BehaviorTree ID="StrikerPlay">
+      <ReactiveSequence>
+         <SelfLocate mode="trust_direction" />
+         <SubTree ID="Locate" _autoremap="true" _while="decision!='find'" />
+         <ReactiveSequence _while="wait_for_opponent_kickoff" name="等待对方开球">
+            <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+            <SetVelocity />
+         </ReactiveSequence>
+         <ReactiveSequence _while="!wait_for_opponent_kickoff" name="/正常比赛, 即已方开球或对方已经开球">
+            <Sequence _while="ball_out">
+               <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+               <GoBackInField />
+               <SubTree ID="Locate" _autoremap="true" _while="decision!='find'" />
+            </Sequence>
+            <ReactiveSequence _while="!ball_out">
+               <ReactiveSequence >
+                  <SubTree ID="CamFindAndTrackBall" _autoremap="true" />
+                  <CalcKickDir />
+                  <Sequence>
+                     <ReactiveSequence>
+                        <StrikerDecide decision_out="{decision}" decision_in="{decision}" chase_threshold="2" />
+                        <!--继上一行：chase_threshold: 决定追球的距离阈值，单位为米-->
+                        <SubTree ID="FindBall" _while="decision=='find'" _autoremap="true" />
+                     </ReactiveSequence>
+                        <Assist _while="decision == 'assist'" vx_limit = "1.0" vy_limit="0.8" />
+                        <!-- 继上一行：协助队友，速度限制为1.0米/秒，侧向速度限制为0.8米/秒 -->
+                        <Chase   _while="decision == 'chase'"  vx_limit="2.0"  vy_limit="1.5"  vtheta_limit="2.0"  dist="0.25" safe_dist="0.5" />
+                        <!-- 继上一行：当决策为'chase'时，追球，速度限制为2.0米/秒，安全距离为0.5米 -->
+                        <Adjust _while="decision =='adjust'" turn_threshold="0.5" range="0.35" vx_limit="0.5" vy_limit="0.6" vtheta_limit="2" vtheta_factor="3.0" tangential_speed_far="0.9" tangential_speed_near="0.6" near_threshold="0.7" no_turn_threshold="0.08" turn_first_threshold="0.6"/>
+                        <!-- 继上一行：当决策为'adjust'时，turn_threshold为0.5弧度，目标距离为0.35米，速度限制为0.5米/秒，角速度限制为2.0弧度/秒，角速度因子为3.0，远距离切线速度为0.9米/秒，近距离切线速度为0.6米/秒，近距离阈值为0.7米，无需转向阈值为0.08弧度，优先转向阈值为0.6弧度 -->
+                        <Kick _while="decision == 'kick'" speed_limit="2.0" min_msec_kick="300" msecs_stablize="500"/>
+                        <!-- 继上一行：当决策为'kick'时，踢球，速度限制为2.0，最小踢球时间为300毫秒，踢球前稳定时间为500毫秒 -->
+                        <Kick _while="decision == 'cross'" speed_limit="2.0" min_msec_kick="300"/>
+                        <!-- 当决策为'cross'时，传中，速度限制为2.0，最小踢球时间为300毫秒 -->
+                  </Sequence>
+               </ReactiveSequence>
+            </ReactiveSequence>
+         </ReactiveSequence>
+      </ReactiveSequence>
+   </BehaviorTree>
+</root>

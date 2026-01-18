@@ -1,0 +1,18 @@
+<!-- 用于在遥控比赛中用 AI 辅助操作者 -->
+
+<root BTCPP_format="4" >
+    <include path="./subtrees/subtree_cam_find_and_track_ball.xml" />
+
+     <BehaviorTree ID="MainTree">
+        <Sequence name="root">
+            <ReactiveSequence _while="control_state>=2">
+               <SubTree ID="CamFindAndTrackBall" _autoremap="true" /><!-- 在控制状态大于等于2时启用摄像头寻找和跟踪球 -->
+               <SimpleChase _while="assist_chase" stop_dist="0.0" stop_angle="0.3" vx_limit="1.5" /><!-- 在辅助追球模式下启用简单追球 -->
+               <Sequence _while="assist_kick"><!-- 在辅助踢球模式下启用踢球动作 -->
+                  <!-- <StepOnSpot /> -->
+                  <Kick speed_limit="2.0" min_msec_kick="300"/><!-- 踢球动作，速度限制为2.0，最小踢球时间为300毫秒 -->
+               </Sequence>
+            </ReactiveSequence>
+        </Sequence>
+     </BehaviorTree>
+</root>
